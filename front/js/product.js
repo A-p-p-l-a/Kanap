@@ -62,7 +62,7 @@ const addSelect = () => {
                         tab[i].quantity= parseInt(tab[i].quantity) + parseInt(quantityProduct.value),
                         localStorage.setItem("product",JSON.stringify(tab)),
                         (tab = JSON.parse(localStorage.getItem("product"))),
-                        window.location = 'cart.html'
+                        window.location = 'index.html'
                     );  
                 }  
             }
@@ -72,12 +72,12 @@ const addSelect = () => {
                         tab.push(addToTab),
                         localStorage.setItem("product",JSON.stringify(tab)),
                         (tab = JSON.parse(localStorage.getItem("product"))),
-                        window.location = 'cart.html'
+                        window.location = 'index.html'
                     ); 
                 }
             }
         }
-        window.location = 'cart.html';
+        window.location = 'index.html';
     });
     return (tab= JSON.parse(localStorage.getItem("product")));
 };
