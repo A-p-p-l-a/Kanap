@@ -1,4 +1,8 @@
+/* Créer un Tableau vide pour pouvoir mettre des données */
+
 let itemsData = [];
+
+/* Appeler l'API puis mettre les données dans le tableau */
 
 fetchItems = async () => {
   await fetch("http://127.0.0.1:3000/api/products")
@@ -10,6 +14,7 @@ fetchItems = async () => {
   
 }
 
+/* Ajout du code html avec une fonction pour afficher les données récupérer de l'API */
 
 const itemsDisplay= async () => {
   await fetchItems();
@@ -24,5 +29,7 @@ const itemsDisplay= async () => {
   </a>
   `).join ("");
 };
+
+/* Exécuter la fonction pour afficher le code html */
 
 itemsDisplay ();

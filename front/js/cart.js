@@ -1,10 +1,16 @@
+/* Créer un Tableau vide pour pouvoir mettre des données */
+
 let calcProduct = [];
+
+/* Récupération du localStorage */
 
 let addProduct = JSON.parse(localStorage.getItem("product"));
 
+let orderProduct = JSON.parse(localStorage.getItem("order"));
 
-const cartDisplay = async () => {
-    
+/* Ajout code html avec les données du tableau(API) addProduct */
+
+const cartDisplay = async () => { 
     if(addProduct){
         await addProduct;
         console.log(addProduct);
@@ -33,107 +39,85 @@ const cartDisplay = async () => {
         `).join(""); 
         calcTotal();
         removeProduct();
-        addValueCart();
-        
-        
-        
-    };
-    
+        addValueCart();  
+    };  
 };
 
+/* Exécuter la fonction pour afficher les données dans le code html */
+
 cartDisplay();
+
+/* Gestion du bouton supprimer */
 
 const removeProduct = async (cartDisplay) => {
     await cartDisplay;
     let deleteProduct = document.querySelectorAll(".deleteItem");
-    
-    console.log(deleteProduct);
     deleteProduct.forEach((remove) => {
         console.log(remove.parentElement.parentElement.parentElement.parentElement);
         remove.addEventListener("click",() =>{
-            
-
             let RemoveTotalProduct= addProduct.length;
             
-
+            /* Si il y a seulement 1 article, supprimer le localStorage */
+            
             if(RemoveTotalProduct == 1){
                 return ( 
                     localStorage.removeItem("product"),
                     location.href ="cart.html"
                 );
-            } else {
+            } 
+            
+            /* Sinon supprimer seulement l'article avec l'id */
+            
+            else {
                 calcRemoveProduct = addProduct.filter(el => {
-                    if (remove.parentElement.parentElement.parentElement.parentElement.dataset.id !=el._id || remove.parentElement.parentElement.parentElement.parentElement.dataset.color != el.colors){
-                        return true
+                if (remove.parentElement.parentElement.parentElement.parentElement.dataset.id !=el._id || remove.parentElement.parentElement.parentElement.parentElement.dataset.color != el.colors){
+                    return true
                     }
                 } );
                 localStorage.setItem("product",JSON.stringify(calcRemoveProduct));
                 location.href ="cart.html";
-            }
-            
-        });
-        
+            }  
+        });  
     });
     return;
 };
 
+/* Gestion du nombre d'article */
 
-
-const addValueCart = async (
-    cartDisplay
-    ) => {
+const addValueCart = async (cartDisplay) => {
     await cartDisplay;
-
     let add = document.querySelectorAll(".cart__item");
-    
-    console.log(add);
     add.forEach((changeValue) => {
-        changeValue.addEventListener("change", () => {
-
-           
-            for( i=0; i< addProduct.length;i++){
-                
+        changeValue.addEventListener("change", () => { 
+            for( i=0; i< addProduct.length;i++){ 
                 if(
                     addProduct[i]._id == changeValue.dataset.id && 
                     addProduct[i].colors == changeValue.dataset.color
-
                     ) {
                     return (
                         addProduct[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
                         localStorage.setItem("product", JSON.stringify(addProduct)),
-                        calcTotal()
-         
+                        calcTotal()       
                     );
-
-                    
-
-                };
-                
-            }
-            
-        })
-        
+                };                
+            }   
+        })      
     })
 };
 
+/* Calculer le total d'articles et quantités */
 
-const calcTotal = async (
-    cartDisplay,
-    removeProduct,
-    addValueCart
-    ) => {
+const calcTotal = async (cartDisplay, removeProduct, addValueCart) => {
     await cartDisplay;
     await removeProduct;
     await addValueCart;
     let allPrice=[];
     let allQantity=[];
-
     let newTab = JSON.parse(localStorage.getItem("product"));
     let showQuantity = document.querySelectorAll(".itemQuantity");
     newTab.forEach((productTab) => {
         allPrice.push(productTab.price * productTab.quantity);
-            allQantity.push(productTab.quantity);
-        
+        allQantity.push(productTab.quantity);   
     });
     console.log(allPrice);
     console.log(allQantity);
@@ -142,6 +126,7 @@ const calcTotal = async (
     totalPrice.textContent = calcRemoveProduct;
 };
 
+/* Gestion du formulaire */
 
 const firstName = document.getElementById("firstName");
 const lastName = document.getElementById("lastName");
@@ -176,7 +161,7 @@ let valueFirstName, valueLastName, valueAddress, valueCity, valueEmail;
         firstNameErrorMsg.innerHTML = "Erreur: Caractère non pris en charge";
         valueFirstName = a.target.value;
     } 
-
+    
     });
 
 lastName.addEventListener("input", function(a){
@@ -203,7 +188,7 @@ lastName.addEventListener("input", function(a){
             lastNameErrorMsg.innerHTML = "Erreur: Caractère non pris en charge";
             valueLastName = a.target.value;
         } 
-    
+        
 });
 
 address.addEventListener("input", function(a){
@@ -230,7 +215,7 @@ address.addEventListener("input", function(a){
         addressErrorMsg.innerHTML = "Erreur: Caractère non pris en charge";
         valueAddress = a.target.value;
         } 
-    
+        
 });
 
 
@@ -262,7 +247,7 @@ city.addEventListener("input", function(a){
 });
 
 email.addEventListener("input", (a) => {
-    if(a.target.value.length ==0) {
+    if(a.target.value.length == 0) {
         emailErrorMsg.innerHTML = "";
         valueEmail = null;
     }
@@ -274,4 +259,67 @@ email.addEventListener("input", (a) => {
         emailErrorMsg.innerHTML = "Erreur: email incorrect, exemple: mon-email@mon-domain.com";
         valueEmail = null;
     }
-})
+    
+});
+
+/* Gestion du bouton pour commander */
+
+cartAndFormContainer.addEventListener("submit", (e) =>{
+    e.preventDefault();
+    
+    /* Si les valeurs du formulaire ne sont pas null */
+    
+    if( valueFirstName && valueLastName && valueAddress && valueCity && valueEmail){
+        const finalOrder = JSON.parse(localStorage.getItem("product"));
+        let orderId =[];
+        finalOrder.forEach((order) => {
+            orderId.push(order._id);
+        });
+        const data={
+            contact:{
+                firstName : valueFirstName,
+                lastName : valueLastName,
+                address : valueAddress,
+                city : valueCity,
+                email : valueEmail
+            },
+            products: orderId
+        }
+        
+        /* Appel l'API pour la method POST */
+        
+        fetch("http://127.0.0.1:3000/api/products/order",{
+            method: "POST",
+            headers: {"Content-Type":"application/json" },
+            body:JSON.stringify(data)
+        }).then((res)=>res.json()).then((promise)=> {
+            let responseServ = promise;
+            console.log(responseServ);
+            const dataOrder= {
+                contact: responseServ.contact,
+                order: responseServ.order,
+                total: totalPrice.textContent
+            }
+            if(orderProduct==null){
+                orderProduct=[];
+                orderProduct.push(dataOrder);
+                localStorage.setItem("order",JSON.stringify(orderProduct));
+            } else if (orderProduct!=null){
+                orderProduct.push(dataOrder);
+                localStorage.setItem("order",JSON.stringify(orderProduct));
+            }
+            
+            /* Supprimer le panier et rediriger l'utilisateur ver la page confirmation avec le numéro de commande */
+            
+            localStorage.removeItem("product");
+            location.href =`confirmation.html?orderId=${responseServ.orderId}`
+        });
+    } 
+    
+    /* Si le formulaire n'est pas correctement rempli */
+
+    else{
+        alert("veuillez remplir correctement le formulaire");
+    }
+});
+ 
