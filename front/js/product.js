@@ -25,14 +25,10 @@ fetchProduct();
 
 const productDisplay= async () => {
     await fetchProduct();
-    document.querySelector(".item__img").innerHTML =
-    `<img src="${productData.imageUrl}" alt="${productData.altTxt}">`; 
-    document.getElementById("description").innerHTML =  
-    `${productData.description}`;
-    document.getElementById("title").innerHTML =  
-    `${productData.name}`;
-    document.getElementById("price").innerHTML =  
-    `${productData.price}`;
+    document.querySelector(".item__img").innerHTML = `<img src="${productData.imageUrl}" alt="${productData.altTxt}">`; 
+    document.getElementById("description").innerHTML = `${productData.description}`;
+    document.getElementById("title").innerHTML = `${productData.name}`;
+    document.getElementById("price").innerHTML =  `${productData.price}`;
     let select = document.getElementById("colors");
     productData.colors.forEach(color => {
         let option = document.createElement("option");
@@ -59,6 +55,12 @@ const addSelect = () => {
             colors : `${selectProduct.value}`,
             quantity : `${quantityProduct.value}`
         });
+        //suppression des données non voulu dans addToTab
+        delete addToTab.price;
+        delete addToTab.name;
+        delete addToTab.imageUrl;
+        delete addToTab.altTxt;
+        delete addToTab.description;
 
         /* Vérifier si l'utilisateur a bien selectionné une couleur et mis un nombre d'article (different de 0) */
 
@@ -70,12 +72,12 @@ const addSelect = () => {
                 window.location = 'index.html';
             } else{
                 alert("veuillez choisir une couleur puis ajouter le nombre d'article(s) que vous voulez"); 
-            }
+            };
         }
 
         /* Ajout des conditions pour incrémentation et ajout d'autre article */
 
-        else if (tab  != null) {
+        else if ((tab  != null) && (addToTab.quantity > 0 && addToTab.colors != "")) {
             for(i=0; i < tab.length; i++) {
                 
                 /* Incrémenter le nombre d'article si l'article et la couleur sont égaux */
@@ -87,9 +89,9 @@ const addSelect = () => {
                         (tab = JSON.parse(localStorage.getItem("product"))),
                         window.location = 'index.html'
                     );  
-                }  
+                }
             }
-
+            
             /* Ajouter un autre article dans le localStorage si il n'y était pas */
 
             for(i=0; i < tab.length; i++) {
@@ -103,9 +105,6 @@ const addSelect = () => {
                 }
             }
         }
-        
-       
     });
-    
     return (tab= JSON.parse(localStorage.getItem("product")));
 };

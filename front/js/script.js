@@ -9,7 +9,6 @@ fetchItems = async () => {
   .then ((response) => response.json())
   .then ((promise) => {
     itemsData = promise
-    console.log(itemsData);
   });
   
 }

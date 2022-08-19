@@ -1,6 +1,7 @@
-/* Créer un Tableau vide pour pouvoir mettre des données */
+/* Créer des tableau vide pour pouvoir mettre des données */
 
 let calcProduct = [];
+let tabResume = [];
 
 /* Récupération du localStorage */
 
@@ -10,39 +11,55 @@ let orderProduct = JSON.parse(localStorage.getItem("order"));
 
 /* Ajout code html avec les données du tableau(API) addProduct */
 
-const cartDisplay = async () => { 
+const cartDisplay = async () => {   
     if(addProduct){
         await addProduct;
-        console.log(addProduct);
-        cart__items.innerHTML = addProduct.map((item) => `
-            <article class="cart__item" data-id="${item._id}" data-color="${item.colors}">
-                <div class="cart__item__img">
-                    <img src="${item.imageUrl}" alt="${item.altTxt}">
-                </div>
-                <div class="cart__item__content">
-                    <div class="cart__item__content__description">
-                        <h2>${item.name}</h2>
-                        <p>${item.colors}</p>
-                        <p>${item.price}</p>
+        for(i=0; i < addProduct.length; i++){
+            // créer un tableau id pour pouvoir aller chercher les donnée dans l'API
+            const id = addProduct[i]._id
+            //Récupération des données dans l'API avec le tableau id
+            await fetch(`http://127.0.0.1:3000/api/products/${id}`)
+                .then((response) => response.json())
+                .then((promise)=> {
+            productData = promise;    
+            });
+            const addToTab = Object.assign({}, addProduct[i], {
+                price : `${productData.price}`,
+                name : `${productData.name}`,
+                imageUrl : `${productData.imageUrl}`,
+                altTxt : `${productData.altTxt}`    
+            });
+            tabResume.push(addToTab);
+            cart__items.innerHTML = tabResume.map((item) => `
+                <article class="cart__item" data-id="${item._id}" data-color="${item.colors}">
+                    <div class="cart__item__img">
+                        <img src="${item.imageUrl}" alt="${item.altTxt}">
                     </div>
-                    <div class="cart__item__content__settings">
-                        <div class="cart__item__content__settings__quantity">
-                            <p>Qté : </p>
-                            <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${item.quantity}">
+                    <div class="cart__item__content">
+                        <div class="cart__item__content__description">
+                            <h2>${item.name}</h2>
+                            <p>${item.colors}</p>
+                            <p>${item.price} €</p>
                         </div>
-                        <div class="cart__item__content__settings__delete">
-                            <p class="deleteItem">Supprimer</p>
+                        <div class="cart__item__content__settings">
+                            <div class="cart__item__content__settings__quantity">
+                                <p>Qté : </p>
+                                <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${item.quantity}">
+                            </div>
+                            <div class="cart__item__content__settings__delete">
+                                <p class="deleteItem">Supprimer</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </article>
-        `).join(""); 
+                </article>
+            `).join("");   
+        };
         calcTotal();
         removeProduct();
         addValueCart();  
     };  
 };
-
+    
 /* Exécuter la fonction pour afficher les données dans le code html */
 
 cartDisplay();
@@ -53,7 +70,6 @@ const removeProduct = async (cartDisplay) => {
     await cartDisplay;
     let deleteProduct = document.querySelectorAll(".deleteItem");
     deleteProduct.forEach((remove) => {
-        console.log(remove.parentElement.parentElement.parentElement.parentElement);
         remove.addEventListener("click",() =>{
             let RemoveTotalProduct= addProduct.length;
             
@@ -65,7 +81,7 @@ const removeProduct = async (cartDisplay) => {
                     location.href ="cart.html"
                 );
             } 
-            
+
             /* Sinon supprimer seulement l'article avec l'id */
             
             else {
@@ -94,12 +110,32 @@ const addValueCart = async (cartDisplay) => {
                     addProduct[i]._id == changeValue.dataset.id && 
                     addProduct[i].colors == changeValue.dataset.color
                     ) {
-                    return (
+                        if(document.querySelectorAll(".cart__item input")[i].value == 0){
+                            return ( 
+                                document.querySelectorAll(".cart__item input")[i].value = 1,
+                                addProduct[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
+                                tabResume[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
+                                localStorage.setItem("product", JSON.stringify(addProduct)),
+                                calcTotal()
+                            );
+                        } 
+                        if(document.querySelectorAll(".cart__item input")[i].value > 100){
+                            return ( 
+                                document.querySelectorAll(".cart__item input")[i].value = 100,
+                                addProduct[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
+                                tabResume[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
+                                localStorage.setItem("product", JSON.stringify(addProduct)),
+                                calcTotal()
+                            );
+                        } 
+                        return (
                         addProduct[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
+                        tabResume[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
                         localStorage.setItem("product", JSON.stringify(addProduct)),
-                        calcTotal()       
+                        calcTotal()     
                     );
-                };                
+                }
+                               
             }   
         })      
     })
@@ -113,17 +149,18 @@ const calcTotal = async (cartDisplay, removeProduct, addValueCart) => {
     await addValueCart;
     let allPrice=[];
     let allQantity=[];
-    let newTab = JSON.parse(localStorage.getItem("product"));
+    let tabQuantity = JSON.parse(localStorage.getItem("product"));
     let showQuantity = document.querySelectorAll(".itemQuantity");
-    newTab.forEach((productTab) => {
-        allPrice.push(productTab.price * productTab.quantity);
+    tabQuantity.forEach((productTab) => {
         allQantity.push(productTab.quantity);   
     });
-    console.log(allPrice);
-    console.log(allQantity);
+    tabResume.forEach((priceTab) => {
+        allPrice.push(priceTab.price * priceTab.quantity);
+    });
     totalQuantity.textContent = `${eval(allQantity.join("+"))}`;
-    calcRemoveProduct=eval(allPrice.join("+"));
+    calcRemoveProduct=`${eval(allPrice.join("+"))}`;
     totalPrice.textContent = calcRemoveProduct;
+    
 };
 
 /* Gestion du formulaire */
@@ -135,6 +172,8 @@ const city = document.getElementById("city");
 const email = document.getElementById("email");
 
 let valueFirstName, valueLastName, valueAddress, valueCity, valueEmail;
+
+//input Prenom
 
    firstName.addEventListener("input", function(a){
     valueFirstName;
@@ -157,12 +196,13 @@ let valueFirstName, valueLastName, valueAddress, valueCity, valueEmail;
     && a.target.value.length > 2
     && a.target.value.length < 50
     ) {
-
         firstNameErrorMsg.innerHTML = "Erreur: Caractère non pris en charge";
         valueFirstName = a.target.value;
     } 
     
     });
+
+//input Nom
 
 lastName.addEventListener("input", function(a){
     valueLastName;
@@ -184,12 +224,13 @@ lastName.addEventListener("input", function(a){
         && a.target.value.length > 2
         && a.target.value.length < 50
     ) {
-    
             lastNameErrorMsg.innerHTML = "Erreur: Caractère non pris en charge";
             valueLastName = a.target.value;
         } 
         
 });
+
+//input Adresse
 
 address.addEventListener("input", function(a){
     valueAddress;
@@ -211,13 +252,13 @@ address.addEventListener("input", function(a){
         && a.target.value.length > 7
         && a.target.value.length < 100
     ) {
-    
         addressErrorMsg.innerHTML = "Erreur: Caractère non pris en charge";
         valueAddress = a.target.value;
         } 
         
 });
 
+//input Ville
 
 city.addEventListener("input", function(a){
     valueCity;
@@ -239,12 +280,13 @@ city.addEventListener("input", function(a){
         && a.target.value.length > 2
         && a.target.value.length < 50
     ) {
-    
             cityErrorMsg.innerHTML = "Erreur: Caractère non pris en charge";
             valueCity = a.target.value;
         } 
         
 });
+
+//input email
 
 email.addEventListener("input", (a) => {
     if(a.target.value.length == 0) {
