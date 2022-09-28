@@ -3,73 +3,53 @@
 const urlParams = new URLSearchParams(window.location.search);
 const id = urlParams.get("id");
 
-/* Créer un Tableau vide pour pouvoir mettre des données */
+/* Appeler l'API */
 
-let productData = [];
-
-/* Appeler l'API puis mettre les données dans le tableau */
-
-const fetchProduct= async () => {
-    await fetch(`http://127.0.0.1:3000/api/products/${id}`)
-    .then((response) => response.json())
-    .then((promise)=> {
-        productData = promise;      
-    });
-}
-
-/* Exécuter la fonction pour avoir le tableau */
-
-fetchProduct();
+ fetch(`http://127.0.0.1:3000/api/products/${id}`)
+  .then ((response) => response.json())
+  .then (product => {
+    displayProduct(product);
+    addSelect(product);
+  }); 
 
 /* Ajout des données du tableau(API) dans le code html */
 
-const productDisplay= async () => {
-    await fetchProduct();
-    document.querySelector(".item__img").innerHTML = `<img src="${productData.imageUrl}" alt="${productData.altTxt}">`; 
-    document.getElementById("description").innerHTML = `${productData.description}`;
-    document.getElementById("title").innerHTML = `${productData.name}`;
-    document.getElementById("price").innerHTML =  `${productData.price}`;
+const displayProduct = product => {
+    document.querySelector(".item__img").innerHTML = `<img src="${product.imageUrl}" alt="${product.altTxt}">`; 
+    document.getElementById("description").innerHTML = `${product.description}`;
+    document.getElementById("title").innerHTML = `${product.name}`;
+    document.getElementById("price").innerHTML =  `${product.price}`;
     let select = document.getElementById("colors");
-    productData.colors.forEach(color => {
+    product.colors.forEach(color => {
         let option = document.createElement("option");
         option.innerHTML=`${color}`;
         option.value=`${color}`;
         select.appendChild(option);
-    });
-    addSelect(productData);
+    });   
 };
-
-/* Exécuter la fonction pour afficher les données dans le code html */
-
-productDisplay ();
 
 /* Fonction pour ajouter un produit dans le localStorage */
 
-const addSelect = () => {
+const addSelect = product => {
     let button = document.getElementById("addToCart");
     button.addEventListener("click", () => {
-        let tab = JSON.parse(localStorage.getItem("product"));
+        let cart = JSON.parse(localStorage.getItem("cart"));
         let selectProduct = document.getElementById("colors");
         let quantityProduct = document.getElementById("quantity");
-        const addToTab = Object.assign({}, productData, {
-            colors : `${selectProduct.value}`,
-            quantity : `${quantityProduct.value}`
-        });
-        //suppression des données non voulu dans addToTab
-        delete addToTab.price;
-        delete addToTab.name;
-        delete addToTab.imageUrl;
-        delete addToTab.altTxt;
-        delete addToTab.description;
-
+        const addToCart = {
+            color : selectProduct.value,
+            quantity : quantityProduct.value,
+            _id: product._id
+        }
+        
         /* Vérifier si l'utilisateur a bien selectionné une couleur et mis un nombre d'article (different de 0) */
 
-        if(tab == null){
-            tab = [];
-            if(addToTab.quantity > 0 && addToTab.colors != ""){
-                tab.push(addToTab);
-                localStorage.setItem("product",JSON.stringify(tab));
-                window.location = 'index.html';
+        if(cart == null){
+            cart = [];
+            if(addToCart.quantity > 0 && addToCart.color != ""){
+                cart.push(addToCart);
+                localStorage.setItem("cart",JSON.stringify(cart));
+                /* window.location = 'index.html'; */
             } else{
                 alert("veuillez choisir une couleur puis ajouter le nombre d'article(s) que vous voulez"); 
             };
@@ -77,34 +57,34 @@ const addSelect = () => {
 
         /* Ajout des conditions pour incrémentation et ajout d'autre article */
 
-        else if ((tab  != null) && (addToTab.quantity > 0 && addToTab.colors != "")) {
-            for(i=0; i < tab.length; i++) {
+        else if ((cart  != null) && (addToCart.quantity > 0 && addToCart.color != "")) {
+            for(i=0; i < cart.length; i++) {
                 
                 /* Incrémenter le nombre d'article si l'article et la couleur sont égaux */
                 
-                if(tab[i]._id == productData._id && tab[i].colors == selectProduct.value){
+                if(cart[i]._id == product._id && cart[i].color == selectProduct.value){
                     return(
-                        tab[i].quantity= parseInt(tab[i].quantity) + parseInt(quantityProduct.value),
-                        localStorage.setItem("product",JSON.stringify(tab)),
-                        (tab = JSON.parse(localStorage.getItem("product"))),
-                        window.location = 'index.html'
+                        cart[i].quantity = parseInt(cart[i].quantity) + parseInt(quantityProduct.value),
+                        localStorage.setItem("cart",JSON.stringify(cart)),
+                        (cart = JSON.parse(localStorage.getItem("cart")))
+                         /* window.location = 'index.html' */
                     );  
-                }
-            }
-            
-            /* Ajouter un autre article dans le localStorage si il n'y était pas */
-
-            for(i=0; i < tab.length; i++) {
-                if((tab[i]._id == productData._id && tab[i].colors != selectProduct.value) || tab[i]._id != productData._id) {
+                };
+            } 
+                /* Ajouter un autre article dans le localStorage si il n'y était pas */
+            for(i=0; i < cart.length; i++) {  
+                if((cart[i]._id == product._id && cart[i].color != selectProduct.value) || cart[i]._id != product._id) {
                     return(
-                        tab.push(addToTab),
-                        localStorage.setItem("product",JSON.stringify(tab)),
-                        (tab = JSON.parse(localStorage.getItem("product"))),
-                        window.location = 'index.html'
+                        cart.push(addToCart),
+                        localStorage.setItem("cart",JSON.stringify(cart)),
+                        (cart = JSON.parse(localStorage.getItem("cart")))
+                        /* window.location = 'index.html' */
                     ); 
-                }
-            }
-        }
+                };
+                
+            };
+            
+        };
+        
     });
-    return (tab= JSON.parse(localStorage.getItem("product")));
 };

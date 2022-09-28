@@ -1,58 +1,60 @@
 /* Créer des tableau vide pour pouvoir mettre des données */
 
-let calcProduct = [];
 let tabResume = [];
 
 /* Récupération du localStorage */
 
-let addProduct = JSON.parse(localStorage.getItem("product"));
+let cart = JSON.parse(localStorage.getItem("cart"));
 
 let orderProduct = JSON.parse(localStorage.getItem("order"));
 
-/* Ajout code html avec les données du tableau(API) addProduct */
-
+/* Ajout code html avec les données du tableau(API) cart */
 const cartDisplay = async () => {   
-    if(addProduct){
-        await addProduct;
-        for(i=0; i < addProduct.length; i++){
+    if(cart){
+        for(i=0; i < cart.length; i++){
             // créer un tableau id pour pouvoir aller chercher les donnée dans l'API
-            const id = addProduct[i]._id
+            const id = cart[i]._id
             //Récupération des données dans l'API avec le tableau id
             await fetch(`http://127.0.0.1:3000/api/products/${id}`)
-                .then((response) => response.json())
-                .then((promise)=> {
-            productData = promise;    
-            });
-            const addToTab = Object.assign({}, addProduct[i], {
-                price : `${productData.price}`,
-                name : `${productData.name}`,
-                imageUrl : `${productData.imageUrl}`,
-                altTxt : `${productData.altTxt}`    
+            .then((response) => response.json())
+            .then((promise)=> {
+                product = promise;    
+            }); 
+            const addToTab = Object.assign({}, cart[i], {
+                price : product.price,
+                name : product.name,
+                imageUrl : product.imageUrl,
+                altTxt : product.altTxt    
             });
             tabResume.push(addToTab);
-            cart__items.innerHTML = tabResume.map((item) => `
-                <article class="cart__item" data-id="${item._id}" data-color="${item.colors}">
-                    <div class="cart__item__img">
-                        <img src="${item.imageUrl}" alt="${item.altTxt}">
-                    </div>
-                    <div class="cart__item__content">
-                        <div class="cart__item__content__description">
-                            <h2>${item.name}</h2>
-                            <p>${item.colors}</p>
-                            <p>${item.price} €</p>
+            const itemsElt = document.getElementById("cart__items");
+            let productHtml = "";
+            tabResume.forEach(product => {
+                productHtml +=`
+                    <article class="cart__item" data-id="${product._id}" data-color="${product.color}">
+                        <div class="cart__item__img">
+                            <img src="${product.imageUrl}" alt="${product.altTxt}">
                         </div>
-                        <div class="cart__item__content__settings">
-                            <div class="cart__item__content__settings__quantity">
-                                <p>Qté : </p>
-                                <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${item.quantity}">
+                        <div class="cart__item__content">
+                            <div class="cart__item__content__description">
+                                <h2>${product.name}</h2>
+                                <p>${product.color}</p>
+                                <p>${product.price} €</p>
                             </div>
-                            <div class="cart__item__content__settings__delete">
-                                <p class="deleteItem">Supprimer</p>
+                            <div class="cart__item__content__settings">
+                                <div class="cart__item__content__settings__quantity">
+                                    <p>Qté : </p>
+                                    <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${product.quantity}">
+                                </div>
+                                <div class="cart__item__content__settings__delete">
+                                    <p class="deleteItem">Supprimer</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </article>
-            `).join("");   
+                    </article>
+                `;
+            }),
+            itemsElt.innerHTML = productHtml;   
         };
         calcTotal();
         removeProduct();
@@ -71,28 +73,32 @@ const removeProduct = async (cartDisplay) => {
     let deleteProduct = document.querySelectorAll(".deleteItem");
     deleteProduct.forEach((remove) => {
         remove.addEventListener("click",() =>{
-            let RemoveTotalProduct= addProduct.length;
+            let RemoveTotalProduct= cart.length;
             
             /* Si il y a seulement 1 article, supprimer le localStorage */
             
             if(RemoveTotalProduct == 1){
                 return ( 
-                    localStorage.removeItem("product"),
-                    location.href ="cart.html"
-                );
+                    localStorage.removeItem("cart"),
+                    window.location = 'index.html'
+                )
+                
             } 
 
             /* Sinon supprimer seulement l'article avec l'id */
             
             else {
-                calcRemoveProduct = addProduct.filter(el => {
-                if (remove.parentElement.parentElement.parentElement.parentElement.dataset.id !=el._id || remove.parentElement.parentElement.parentElement.parentElement.dataset.color != el.colors){
+                calcRemoveProduct = cart.filter(el => {
+                if (remove.parentElement.parentElement.parentElement.parentElement.dataset.id !=el._id || remove.parentElement.parentElement.parentElement.parentElement.dataset.color != el.color){
                     return true
                     }
-                } );
-                localStorage.setItem("product",JSON.stringify(calcRemoveProduct));
-                location.href ="cart.html";
-            }  
+                } ); 
+                
+                localStorage.setItem("cart",JSON.stringify(calcRemoveProduct));
+                (cart = JSON.parse(localStorage.getItem("cart")));
+                 remove.parentElement.parentElement.parentElement.parentElement.remove(); 
+                               
+            }   
         });  
     });
     return;
@@ -105,33 +111,33 @@ const addValueCart = async (cartDisplay) => {
     let add = document.querySelectorAll(".cart__item");
     add.forEach((changeValue) => {
         changeValue.addEventListener("change", () => { 
-            for( i=0; i< addProduct.length;i++){ 
+            for( i=0; i< cart.length;i++){ 
                 if(
-                    addProduct[i]._id == changeValue.dataset.id && 
-                    addProduct[i].colors == changeValue.dataset.color
+                    cart[i]._id == changeValue.dataset.id && 
+                    cart[i].color == changeValue.dataset.color
                     ) {
-                        if(document.querySelectorAll(".cart__item input")[i].value == 0){
+                        if(document.querySelectorAll(".cart__item input")[i].value <= 0){
                             return ( 
                                 document.querySelectorAll(".cart__item input")[i].value = 1,
-                                addProduct[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
+                                cart[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
                                 tabResume[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
-                                localStorage.setItem("product", JSON.stringify(addProduct)),
+                                localStorage.setItem("cart", JSON.stringify(cart)),
                                 calcTotal()
                             );
                         } 
                         if(document.querySelectorAll(".cart__item input")[i].value > 100){
                             return ( 
                                 document.querySelectorAll(".cart__item input")[i].value = 100,
-                                addProduct[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
+                                cart[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
                                 tabResume[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
-                                localStorage.setItem("product", JSON.stringify(addProduct)),
+                                localStorage.setItem("cart", JSON.stringify(cart)),
                                 calcTotal()
                             );
                         } 
                         return (
-                        addProduct[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
+                        cart[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
                         tabResume[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
-                        localStorage.setItem("product", JSON.stringify(addProduct)),
+                        localStorage.setItem("cart", JSON.stringify(cart)),
                         calcTotal()     
                     );
                 }
@@ -149,9 +155,8 @@ const calcTotal = async (cartDisplay, removeProduct, addValueCart) => {
     await addValueCart;
     let allPrice=[];
     let allQantity=[];
-    let tabQuantity = JSON.parse(localStorage.getItem("product"));
     let showQuantity = document.querySelectorAll(".itemQuantity");
-    tabQuantity.forEach((productTab) => {
+    cart.forEach((productTab) => {
         allQantity.push(productTab.quantity);   
     });
     tabResume.forEach((priceTab) => {
@@ -197,7 +202,7 @@ let valueFirstName, valueLastName, valueAddress, valueCity, valueEmail;
     && a.target.value.length < 50
     ) {
         firstNameErrorMsg.innerHTML = "Erreur: Caractère non pris en charge";
-        valueFirstName = a.target.value;
+        valueFirstName = null;
     } 
     
     });
@@ -225,7 +230,7 @@ lastName.addEventListener("input", function(a){
         && a.target.value.length < 50
     ) {
             lastNameErrorMsg.innerHTML = "Erreur: Caractère non pris en charge";
-            valueLastName = a.target.value;
+            valueLastName = null;
         } 
         
 });
@@ -253,7 +258,7 @@ address.addEventListener("input", function(a){
         && a.target.value.length < 100
     ) {
         addressErrorMsg.innerHTML = "Erreur: Caractère non pris en charge";
-        valueAddress = a.target.value;
+        valueAddress = null;
         } 
         
 });
@@ -281,7 +286,7 @@ city.addEventListener("input", function(a){
         && a.target.value.length < 50
     ) {
             cityErrorMsg.innerHTML = "Erreur: Caractère non pris en charge";
-            valueCity = a.target.value;
+            valueCity = null;
         } 
         
 });
@@ -312,10 +317,10 @@ cartAndFormContainer.addEventListener("submit", (e) =>{
     /* Si les valeurs du formulaire ne sont pas null */
     
     if( valueFirstName && valueLastName && valueAddress && valueCity && valueEmail){
-        const finalOrder = JSON.parse(localStorage.getItem("product"));
+        const cart = JSON.parse(localStorage.getItem("cart"));
         let orderId =[];
-        finalOrder.forEach((order) => {
-            orderId.push(order._id);
+        cart.forEach((order) => {
+                orderId.push(order._id);    
         });
         const data={
             contact:{
@@ -336,12 +341,15 @@ cartAndFormContainer.addEventListener("submit", (e) =>{
             body:JSON.stringify(data)
         }).then((res)=>res.json()).then((promise)=> {
             let responseServ = promise;
-            console.log(responseServ);
+            
             const dataOrder= {
                 contact: responseServ.contact,
-                order: responseServ.order,
+                order: responseServ.orderId,
+                products: cart,
+                quantity: totalQuantity.textContent,
                 total: totalPrice.textContent
             }
+        
             if(orderProduct==null){
                 orderProduct=[];
                 orderProduct.push(dataOrder);
@@ -353,7 +361,7 @@ cartAndFormContainer.addEventListener("submit", (e) =>{
             
             /* Supprimer le panier et rediriger l'utilisateur ver la page confirmation avec le numéro de commande */
             
-            localStorage.removeItem("product");
+            localStorage.removeItem("cart");
             location.href =`confirmation.html?orderId=${responseServ.orderId}`
         });
     } 
