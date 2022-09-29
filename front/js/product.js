@@ -10,9 +10,9 @@ const id = urlParams.get("id");
   .then (product => {
     displayProduct(product);
     addSelect(product);
-  }); 
+  }).catch(() => alert("impossible de récupérer les donées")); 
 
-/* Ajout des données du tableau(API) dans le code html */
+/* Ajout des données de l'API dans le code html */
 
 const displayProduct = product => {
     document.querySelector(".item__img").innerHTML = `<img src="${product.imageUrl}" alt="${product.altTxt}">`; 
@@ -49,7 +49,7 @@ const addSelect = product => {
             if(addToCart.quantity > 0 && addToCart.color != ""){
                 cart.push(addToCart);
                 localStorage.setItem("cart",JSON.stringify(cart));
-                /* window.location = 'index.html'; */
+                window.location = 'index.html';
             } else{
                 alert("veuillez choisir une couleur puis ajouter le nombre d'article(s) que vous voulez"); 
             };
@@ -58,33 +58,14 @@ const addSelect = product => {
         /* Ajout des conditions pour incrémentation et ajout d'autre article */
 
         else if ((cart  != null) && (addToCart.quantity > 0 && addToCart.color != "")) {
-            for(i=0; i < cart.length; i++) {
-                
-                /* Incrémenter le nombre d'article si l'article et la couleur sont égaux */
-                
-                if(cart[i]._id == product._id && cart[i].color == selectProduct.value){
-                    return(
-                        cart[i].quantity = parseInt(cart[i].quantity) + parseInt(quantityProduct.value),
-                        localStorage.setItem("cart",JSON.stringify(cart)),
-                        (cart = JSON.parse(localStorage.getItem("cart")))
-                         /* window.location = 'index.html' */
-                    );  
-                };
-            } 
-                /* Ajouter un autre article dans le localStorage si il n'y était pas */
-            for(i=0; i < cart.length; i++) {  
-                if((cart[i]._id == product._id && cart[i].color != selectProduct.value) || cart[i]._id != product._id) {
-                    return(
-                        cart.push(addToCart),
-                        localStorage.setItem("cart",JSON.stringify(cart)),
-                        (cart = JSON.parse(localStorage.getItem("cart")))
-                        /* window.location = 'index.html' */
-                    ); 
-                };
-                
-            };
-            
+            const productIndex = cart.findIndex((element) => element._id === product._id && element.color === selectProduct.value);
+            if(productIndex === -1){
+                cart.push(addToCart);  
+            } else {
+                cart[productIndex].quantity = parseInt(cart[productIndex].quantity) + parseInt(quantityProduct.value);
+            }
+            localStorage.setItem("cart",JSON.stringify(cart));
+            window.location = 'index.html';
         };
-        
     });
 };
