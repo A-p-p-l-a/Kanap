@@ -8,9 +8,9 @@ let cart = JSON.parse(localStorage.getItem("cart"));
 
 let orderProduct = JSON.parse(localStorage.getItem("order"));
 
-/* Ajout code html avec les données du tableau(API) cart */
+/* Ajout code html avec les données de l'API */
 const cartDisplay = async () => {   
-    if(cart){
+    if(cart && cart != 0){
         for(i=0; i < cart.length; i++){
             // créer un tableau id pour pouvoir aller chercher les donnée dans l'API
             const id = cart[i]._id
@@ -19,17 +19,19 @@ const cartDisplay = async () => {
             .then((response) => response.json())
             .then((promise)=> {
                 product = promise;    
-            }); 
+            });
+            // Ajouter les données manquant du localstorage dans un tableau different
             const addToTab = Object.assign({}, cart[i], {
                 price : product.price,
                 name : product.name,
                 imageUrl : product.imageUrl,
                 altTxt : product.altTxt    
             });
+            // insérer le tableau addToTab dans le tableau qu'on créé précédement
             tabResume.push(addToTab);
             const itemsElt = document.getElementById("cart__items");
             let productHtml = "";
-            tabResume.forEach(product => {
+            tabResume.forEach((product, index) => {
                 productHtml +=`
                     <article class="cart__item" data-id="${product._id}" data-color="${product.color}">
                         <div class="cart__item__img">
@@ -59,7 +61,14 @@ const cartDisplay = async () => {
         calcTotal();
         removeProduct();
         addValueCart();  
-    };  
+    } 
+    
+    //Si le panier est vide, afficher l'information
+    
+    else{
+        const itemsElt = document.getElementById("cartAndFormContainer");
+        itemsElt.innerHTML = "<h1>Votre panier est vide</h1>";
+    }
 };
     
 /* Exécuter la fonction pour afficher les données dans le code html */
@@ -68,104 +77,72 @@ cartDisplay();
 
 /* Gestion du bouton supprimer */
 
-const removeProduct = async (cartDisplay) => {
+const removeProduct = async () => {
     await cartDisplay;
     let deleteProduct = document.querySelectorAll(".deleteItem");
-    deleteProduct.forEach((remove) => {
+    deleteProduct.forEach((remove, index) => {
         remove.addEventListener("click",() =>{
-            let RemoveTotalProduct= cart.length;
-            
-            /* Si il y a seulement 1 article, supprimer le localStorage */
-            
-            if(RemoveTotalProduct == 1){
+            const itemsElt = document.getElementsByClassName("cart__item"); 
+            const itemToRemove = Array.prototype.find.call(itemsElt, elt => elt.dataset.id === cart[index]._id && elt.dataset.color === cart[index].color);
+            const itemContainer = document.getElementById("cart__items");
+            itemContainer.removeChild(itemToRemove);
+            const newCart = cart.filter(elt => !(elt._id === itemToRemove.dataset.id && elt.color === itemToRemove.dataset.color));
+            localStorage.setItem("cart", JSON.stringify(newCart));
+            cart = newCart;
+            tabResume= tabResume.filter(elt => !(elt._id === itemToRemove.dataset.id && elt.color === itemToRemove.dataset.color)); 
+            calcTotal();
+            if(cart.length == 0){
                 return ( 
                     localStorage.removeItem("cart"),
-                    window.location = 'index.html'
-                )
-                
-            } 
-
-            /* Sinon supprimer seulement l'article avec l'id */
-            
-            else {
-                calcRemoveProduct = cart.filter(el => {
-                if (remove.parentElement.parentElement.parentElement.parentElement.dataset.id !=el._id || remove.parentElement.parentElement.parentElement.parentElement.dataset.color != el.color){
-                    return true
-                    }
-                } ); 
-                
-                localStorage.setItem("cart",JSON.stringify(calcRemoveProduct));
-                (cart = JSON.parse(localStorage.getItem("cart")));
-                 remove.parentElement.parentElement.parentElement.parentElement.remove(); 
-                               
-            }   
-        });  
+                    location.href ="index.html"
+                );
+            }
+        });
+        
     });
     return;
 };
 
 /* Gestion du nombre d'article */
 
-const addValueCart = async (cartDisplay) => {
-    await cartDisplay;
+const addValueCart = async () => {
     let add = document.querySelectorAll(".cart__item");
     add.forEach((changeValue) => {
-        changeValue.addEventListener("change", () => { 
-            for( i=0; i< cart.length;i++){ 
-                if(
-                    cart[i]._id == changeValue.dataset.id && 
-                    cart[i].color == changeValue.dataset.color
-                    ) {
-                        if(document.querySelectorAll(".cart__item input")[i].value <= 0){
-                            return ( 
-                                document.querySelectorAll(".cart__item input")[i].value = 1,
-                                cart[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
-                                tabResume[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
-                                localStorage.setItem("cart", JSON.stringify(cart)),
-                                calcTotal()
-                            );
-                        } 
-                        if(document.querySelectorAll(".cart__item input")[i].value > 100){
-                            return ( 
-                                document.querySelectorAll(".cart__item input")[i].value = 100,
-                                cart[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
-                                tabResume[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
-                                localStorage.setItem("cart", JSON.stringify(cart)),
-                                calcTotal()
-                            );
-                        } 
-                        return (
-                        cart[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
-                        tabResume[i].quantity = document.querySelectorAll(".cart__item input")[i].value,
-                        localStorage.setItem("cart", JSON.stringify(cart)),
-                        calcTotal()     
-                    );
+        changeValue.addEventListener("change", (event) => {
+            // utiliser findIndex qui permet de trouver l'index du produit à mettre à jour dans le panier
+            const productIndex = cart.findIndex((el) => el._id === changeValue.dataset.id && el.color == changeValue.dataset.color);
+            if (productIndex > -1) {
+                if(event.target.value <= 0){ 
+                    event.target.value = 1; 
+                } 
+                if(event.target.value > 100){
+                    event.target.value = 100;
                 }
-                               
-            }   
+                cart[productIndex].quantity = event.target.value,
+                tabResume[productIndex].quantity = event.target.value,
+                localStorage.setItem("cart", JSON.stringify(cart)),
+                calcTotal()
+            }  
         })      
     })
 };
 
 /* Calculer le total d'articles et quantités */
 
-const calcTotal = async (cartDisplay, removeProduct, addValueCart) => {
-    await cartDisplay;
-    await removeProduct;
-    await addValueCart;
-    let allPrice=[];
-    let allQantity=[];
-    let showQuantity = document.querySelectorAll(".itemQuantity");
-    cart.forEach((productTab) => {
-        allQantity.push(productTab.quantity);   
+const calcTotal = () => { 
+    let totalPrice = 0;
+    let totalQuantities = 0;
+    cart.forEach((productTab) => { 
+        const product = tabResume.find(el => el._id === productTab._id);
+        const quantity = parseInt(productTab.quantity);
+        const price = parseInt(product.price);
+        totalPrice += (price * quantity);
+        totalQuantities += quantity;
     });
-    tabResume.forEach((priceTab) => {
-        allPrice.push(priceTab.price * priceTab.quantity);
-    });
-    totalQuantity.textContent = `${eval(allQantity.join("+"))}`;
-    calcRemoveProduct=`${eval(allPrice.join("+"))}`;
-    totalPrice.textContent = calcRemoveProduct;
-    
+    const totalPriceElement = document.getElementById('totalPrice');
+    totalPriceElement.textContent = totalPrice;
+    const totalQuantityElement = document.getElementById('totalQuantity');
+    totalQuantityElement.textContent = totalQuantities;
 };
 
 /* Gestion du formulaire */
